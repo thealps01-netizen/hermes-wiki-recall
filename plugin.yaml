@@ -1,0 +1,25 @@
+name: wiki-recall
+label: Wiki Recall
+version: 1.1.0
+description: >-
+  Before each model turn, searches the open LLM Wiki project (local desktop app API) with the
+  user's message and adds up to 3 page titles and paths whose vector score is at least 0.8, so the
+  assistant knows the wiki may hold the answer without being asked to look. No page content is
+  added. If the app is closed or slower than 2 seconds, nothing is added. An optional skip pattern
+  leaves matching messages unsearched.
+author: Muhammed Enes Alpler
+kind: standalone
+requires_hermes: ">=0.22.2"
+provides_hooks:
+  - pre_llm_call
+config_schema:
+  api_token:
+    type: secret
+    env: LLM_WIKI_API_TOKEN
+    label: "API token"
+    description: "Only needed when the LLM Wiki app requires a token; sent only in the Authorization header."
+  skip_pattern:
+    type: str
+    default: ""
+    label: "Skip pattern"
+    description: "Case-insensitive regular expression; messages that match are not searched. Empty searches every message."
