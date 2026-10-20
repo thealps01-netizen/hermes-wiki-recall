@@ -98,6 +98,36 @@ class RecallTests(unittest.TestCase):
         hits = recall.search("gateway decision", base_url=self.base, token=None)
         self.assertEqual([h["title"] for h in hits], ["A", "C", "D"])
 
+    def test_strong_hits_carry_no_low_confidence_mark(self):
+        hits = recall.search("gateway decision", base_url=self.base, token=None)
+        self.assertFalse(any(h.get("low_confidence") for h in hits))
+        self.assertNotIn("low confidence", recall.format_context(hits))
+
+    def test_without_strong_hit_keeps_two_best_weak_hits_marked(self):
+        _Handler.reply = {"results": [
+            {"path": "wiki/w1.md", "title": "W1", "vectorScore": 0.66},
+            {"path": "wiki/w2.md", "title": "W2", "vectorScore": 0.79},
+            {"path": "wiki/w3.md", "title": "W3", "vectorScore": 0.7},
+            {"path": "wiki/w4.md", "title": "W4", "vectorScore": 0.64},
+        ]}
+        hits = recall.search("gateway decision", base_url=self.base, token=None)
+        self.assertEqual([h["title"] for h in hits], ["W2", "W3"])
+        self.assertTrue(all(h["low_confidence"] for h in hits))
+        text = recall.format_context(hits)
+        self.assertIn("low confidence", text)
+        self.assertIn("W2 (wiki/w2.md)", text)
+
+    def test_weak_hits_below_floor_give_nothing(self):
+        _Handler.reply = {"results": [{"path": "wiki/w.md", "title": "W", "vectorScore": 0.64}]}
+        self.assertEqual(recall.search("gateway decision", base_url=self.base, token=None), [])
+
+    def test_strong_hit_suppresses_weak_hits(self):
+        _Handler.reply = {"results": [
+            {"path": "wiki/w.md", "title": "W", "vectorScore": 0.79},
+            {"path": "wiki/s.md", "title": "S", "vectorScore": 0.8},
+        ]}
+        self.assertEqual([h["title"] for h in recall.search("x", base_url=self.base, token=None)], ["S"])
+
     def test_body_is_utf8_and_token_sent_as_bearer(self):
         recall.search("şğüı", base_url=self.base, token="t0k")
         body, auth = _Handler.seen[0]

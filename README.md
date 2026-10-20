@@ -2,7 +2,8 @@
 
 A Hermes plugin. Before each model turn it searches the open LLM Wiki project with the user's
 message and, when a page scores high enough, adds one short note listing up to three page titles
-and paths. The assistant then decides whether to read a page with the LLM Wiki tools.
+and paths. When no page scores that high, it lists up to two closest pages marked as low
+confidence. The assistant then decides whether to read a page with the LLM Wiki tools.
 
 ## Why
 Relying on the `llm-wiki` skill alone, the assistant sometimes skipped the wiki for questions about
@@ -19,6 +20,8 @@ past decisions (it searched chat history instead). This hook makes the lookup au
 
 ## Behaviour
 - Pointer rule: vector score >= 0.8, at most 3 pointers, titles and paths only.
+- Low-confidence rule: when no page reaches 0.8, the best pages with vector score >= 0.65 are
+  listed, at most 2, under a note saying no page matched closely.
 - Skip pattern (optional, empty by default): a case-insensitive regular expression; messages that
   match are not searched. Set it in the plugin's settings form, or in `config.yaml`:
 
@@ -53,6 +56,13 @@ hand-labelled), 54 messages got pointers: 32 pointers were relevant, 33 unrelate
 20% of messages got at least one unrelated pointer. Also requiring the app's fused keyword+vector
 score cut unrelated pointers by about two thirds but dropped 9 of the 32 relevant ones, because
 keyword matching fails across languages, so the rule stays vector-only.
+
+Low-confidence pointers: on 36 hand-picked messages from the same user (26 with an answer page in
+the wiki, 10 without), the 0.8 rule alone named the answer page for 13 of the 26; adding the
+low-confidence rule raised that to 19, and it added low-confidence pointers to 3 of the 10
+messages with no answer page. On the 88 real messages that got no pointer in the 142-message
+set, the best score was 0.7-0.8 for 19 and 0.6-0.7 for 33, so roughly 19-52 of them now get a
+low-confidence note; these were not labelled.
 
 Only the latest message is searched. A note is stored with the message it was added to and is
 sent again on later turns of the same session, so a short follow-up can still use an earlier

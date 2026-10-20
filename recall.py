@@ -14,11 +14,15 @@ import urllib.request
 logger = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = "http://127.0.0.1:19828"
-# Measured on a real wiki: unrelated questions top out near 0.52, related ones reach 0.8-1.0.
-# The app caps page scores at 1.0 (best chunk + 30% of the other chunks), so long pages can reach
-# 1.0 on weak matches; a pointer costs one line, so that rate (~7% of real messages) is accepted.
+# Measured on one real wiki: relevant pages mostly score 0.65-1.0, but unrelated pages reach that
+# range too, because the app caps page scores at 1.0 (best chunk + 30% of the other chunks) and long
+# pages score high on weak matches. A pointer costs one line, so that rate is accepted (README, Known limit).
 MIN_VECTOR_SCORE = 0.8
 MAX_POINTERS = 3
+# With no page at MIN_VECTOR_SCORE, the best pages down to this score are listed as low confidence:
+# relevant pages often score 0.65-0.8, and naming them beats leaving the turn without a hint.
+MIN_WEAK_SCORE = 0.65
+MAX_WEAK_POINTERS = 2
 MAX_QUERY_CHARS = 1000
 TIMEOUT_S = 2.0
 
@@ -87,14 +91,23 @@ def search(query, *, base_url=None, token=None, timeout=TIMEOUT_S, skip=None):
     except Exception as exc:
         _warn(_failure_reason(exc), type(exc).__name__)
         return []
-    hits = [r for r in results if isinstance(r, dict) and r.get("path")
-            and isinstance(r.get("vectorScore"), (int, float)) and r["vectorScore"] >= MIN_VECTOR_SCORE]
-    return hits[:MAX_POINTERS]
+    scored = [r for r in results if isinstance(r, dict) and r.get("path")
+              and isinstance(r.get("vectorScore"), (int, float))]
+    strong = [r for r in scored if r["vectorScore"] >= MIN_VECTOR_SCORE]
+    if strong:
+        return strong[:MAX_POINTERS]
+    weak = sorted((r for r in scored if r["vectorScore"] >= MIN_WEAK_SCORE),
+                  key=lambda r: r["vectorScore"], reverse=True)
+    return [dict(r, low_confidence=True) for r in weak[:MAX_WEAK_POINTERS]]
 
 
 def format_context(hits) -> str:
     if not hits:
         return ""
-    lines = [f"- {h.get('title') or h['path']} ({h['path']})" for h in hits]
+    lines = "\n".join(f"- {h.get('title') or h['path']} ({h['path']})" for h in hits)
+    if any(h.get("low_confidence") for h in hits):
+        return ("No LLM Wiki page matched this message closely. Closest pages (automatic search, "
+                "low confidence, may be unrelated). If the message is about the user's own setup, "
+                "work or past decisions, search the wiki or read one of these:\n" + lines)
     return ("LLM Wiki pages that may be relevant to this message (automatic search; titles only, "
-            "may be unrelated). Read one with the llm-wiki tools only if it helps answer:\n" + "\n".join(lines))
+            "may be unrelated). Read one with the llm-wiki tools only if it helps answer:\n" + lines)

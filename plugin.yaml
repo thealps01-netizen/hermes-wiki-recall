@@ -1,10 +1,11 @@
 name: wiki-recall
 label: Wiki Recall
-version: 1.1.1
+version: 1.2.0
 description: >-
   Before each model turn, searches the open LLM Wiki project (local desktop app API) with the
   user's message and adds up to 3 page titles and paths whose vector score is at least 0.8, so the
-  assistant knows the wiki may hold the answer without being asked to look. No page content is
+  assistant knows the wiki may hold the answer without being asked to look. When no page reaches
+  0.8, up to 2 closest pages scoring at least 0.65 are listed as low confidence. No page content is
   added. If the app is closed or slower than 2 seconds, nothing is added. An optional skip pattern
   leaves matching messages unsearched.
 author: Muhammed Enes Alpler
