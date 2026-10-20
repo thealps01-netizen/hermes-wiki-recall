@@ -48,8 +48,15 @@ untested. A missing app means no pointers plus the log line above.
 
 ## Known limit
 The app caps page scores at 1.0 (best chunk + 30% of other chunks), so long pages can pass the
-threshold on weak matches. On 50 real user messages this added an unrelated pointer to about 7%.
-Only the latest message is searched; follow-ups like "look at the wiki" rely on the skill.
+threshold on weak matches. On one user's 142 real messages (Turkish messages, English wiki,
+hand-labelled), 54 messages got pointers: 32 pointers were relevant, 33 unrelated and 12 unclear;
+20% of messages got at least one unrelated pointer. Also requiring the app's fused keyword+vector
+score cut unrelated pointers by about two thirds but dropped 9 of the 32 relevant ones, because
+keyword matching fails across languages, so the rule stays vector-only.
+
+Only the latest message is searched. A note is stored with the message it was added to and is
+sent again on later turns of the same session, so a short follow-up can still use an earlier
+note. A follow-up with no earlier note relies on the skill.
 
 ## Enable / disable
 Enable `wiki-recall` from Hermes' plugin settings (or `hermes plugins enable wiki-recall`);

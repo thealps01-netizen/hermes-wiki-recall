@@ -1,6 +1,6 @@
 name: wiki-recall
 label: Wiki Recall
-version: 1.1.0
+version: 1.1.1
 description: >-
   Before each model turn, searches the open LLM Wiki project (local desktop app API) with the
   user's message and adds up to 3 page titles and paths whose vector score is at least 0.8, so the
