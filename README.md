@@ -68,6 +68,16 @@ Only the latest message is searched. A note is stored with the message it was ad
 sent again on later turns of the same session, so a short follow-up can still use an earlier
 note. A follow-up with no earlier note relies on the skill.
 
+Local query rewriting was tried and not adopted. On 135 further real messages from the same user
+(three fresh sets of 45, hand-labelled against the full page list), small local models on the GPU
+(Gemma 3 and 4, Qwen3 1.7B to 8B, TranslateGemma, a query-expansion model) wrote an English
+search query that was searched alongside the Turkish message; some runs added a GPU reranker
+(Qwen3-Reranker-0.6B, score >= 0.1) to choose the pointers. Each candidate was fixed before its
+test set was labelled. None beat the current rule: the best query writer named the answer page
+for one more message (13 vs 12 of 25); the reranker stopped pointers on messages with no answer
+page (11 to 1 of 14) but named the answer page for one or two fewer messages (13 and 12 vs 14 of
+31) and kept 3 to 7 GB of GPU memory in use. The plugin therefore searches the message as written.
+
 ## Enable / disable
 Enable `wiki-recall` from Hermes' plugin settings (or `hermes plugins enable wiki-recall`);
 disable the same way. Takes effect in new sessions.
