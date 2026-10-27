@@ -6,7 +6,7 @@ and paths. When no page scores that high, it lists up to two closest pages marke
 confidence. The assistant then decides whether to read a page with the LLM Wiki tools.
 
 ## Why
-Relying on the `llm-wiki` skill alone, the assistant sometimes skipped the wiki for questions about
+Relying on a wiki skill alone, the assistant sometimes skipped the wiki for questions about
 past decisions (it searched chat history instead). This hook makes the lookup automatic.
 
 ## Requirements
